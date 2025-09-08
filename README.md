@@ -11,7 +11,7 @@ The environment is designed for learning, automation, and real-world portfolio p
 - **Docker Swarm** – container orchestration for services and stacks  
 - **Traefik** – reverse proxy and SSL management ([p02traefik.tomaszelenka.cz](https://p02traefik.tomaszelenka.cz))  
 - **Portainer** – container management GUI  
-- **Monitoring** – Grafana, Prometheus, Loki  
+- **Monitoring** – Grafana, Prometheus, Loki  ([p03grafana.tomaszelenka.cz](https://p03grafana.tomaszelenka.cz))  
 
 ## Goals  
 - Demonstrate infrastructure as code (IaC) with Terraform and Ansible  
