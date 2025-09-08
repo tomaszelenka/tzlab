@@ -3,6 +3,9 @@
 This repository documents my personal **tzlab** built on **Oracle Cloud Infrastructure (OCI)**.  
 The environment is designed for learning, automation, and real-world portfolio projects.  
 
+![tzlab](https://github.com/user-attachments/assets/b529a4b2-5364-4213-a8c2-bb652ff57577)
+
+
 ## Architecture  
 - **3 Nodes (OCI Ampere A1 instances)**  
 - **Terraform** – infrastructure provisioning (VCN, subnets, compute, networking)  
