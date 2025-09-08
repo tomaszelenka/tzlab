@@ -8,20 +8,20 @@ scrape_configs:
 
   - job_name: node
     static_configs:
-      - targets: ['10.30.1.126:9100']
+      - targets: ['XXX:9100']
         labels: { instance: node01 }
-      - targets: ['10.30.1.44:9100' ]
+      - targets: ['XXX:9100' ]
         labels: { instance: node02 }
-      - targets: ['10.30.1.97:9100' ]
+      - targets: ['XXX:9100' ]
         labels: { instance: node03 }
 
   - job_name: cadvisor
     static_configs:
-      - targets: ['10.30.1.126:8080']
+      - targets: ['XXX:8080']
         labels: { instance: node01 }
-      - targets: ['10.30.1.44:8080' ]
+      - targets: ['XXX:8080' ]
         labels: { instance: node02 }
-      - targets: ['10.30.1.97:8080' ]
+      - targets: ['XXX:8080' ]
         labels: { instance: node03 }
 
   - job_name: loki
