@@ -1,0 +1,3 @@
+---
+- import_tasks: setupfs.yml
+  tags: [mon.prep, monitoring]

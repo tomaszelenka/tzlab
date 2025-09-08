@@ -1,0 +1,17 @@
+---
+- name: Ansible cluster
+  hosts: cluster_oci
+  become: true
+  gather_facts: false
+
+  roles:
+    - role: ufw
+      tags: [ufw]     
+    - role: microceph_base
+      tags: [ceph-base]
+    - role: microceph_cluster
+      tags: [ceph-cluster]
+    - role: swarm_init
+      tags: [swarm-init]
+    - role: monitoring
+      tags: [monitoring]

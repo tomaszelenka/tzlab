@@ -1,0 +1,16 @@
+http:
+  middlewares:
+    allow-admin:
+      ipAllowList:
+        sourceRange:
+          - XXX/32 
+
+  routers:
+    traefik-dash:
+      rule: Host(`p02traefikdash.tomaszelenka.cz`)
+      entryPoints: [websecure]
+      tls:
+        certResolver: le
+      service: api@internal
+      middlewares:
+        - allow-admin

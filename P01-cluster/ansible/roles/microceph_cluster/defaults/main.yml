@@ -1,0 +1,7 @@
+---
+
+auto_join: true
+
+ceph_loop_disk: "loop,20G,1"
+cephfs_mountpoint: /mnt/cephfs
+ceph_secret_file: /etc/ceph/cluster.secret

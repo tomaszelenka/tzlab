@@ -1,0 +1,117 @@
+- name: Ensure UFW is installed
+  become: true
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: true
+
+# Default policies
+- name: Set default incoming policy
+  become: true
+  community.general.ufw:
+    direction: incoming
+    policy: "{{ ufw_default_incoming }}"
+
+- name: Set default outgoing policy
+  become: true
+  community.general.ufw:
+    direction: outgoing
+    policy: "{{ ufw_default_outgoing }}"
+
+# SSH
+- name: Allow SSH
+  become: true
+  community.general.ufw:
+    rule: allow
+    name: "{{ ufw_ssh_profile }}"
+  when: ufw_allow_ssh | bool
+
+- name: Allow anywhere services
+  become: true
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto | default(omit) }}"
+  loop: "{{ ufw_allow_anywhere }}"
+
+- name: Remove ports from anywhere (if any)
+  become: true
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto | default(omit) }}"
+    delete: true
+  loop: "{{ ufw_remove_anywhere | default([]) }}"
+
+# ─────────────────────────────────────────────────────────────
+# VCN → node (Ceph/MicroCeph apod.)
+# ─────────────────────────────────────────────────────────────
+- name: Allow VCN services
+  become: true
+  community.general.ufw:
+    rule: allow
+    from_ip: "{{ item.0 }}"
+    port: "{{ item.1.port }}"
+    proto: "{{ item.1.proto | default('tcp') }}"
+  loop: "{{ ufw_vcn_cidrs | product(ufw_vcn_rules) | list }}"
+
+
+# ─────────────────────────────────────────────────────────────
+# Forwarding 
+# ─────────────────────────────────────────────────────────────
+- name: Ensure UFW default forward policy is ACCEPT
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/default/ufw
+    regexp: '^DEFAULT_FORWARD_POLICY='
+    line: 'DEFAULT_FORWARD_POLICY="ACCEPT"'
+  notify: Reload UFW
+
+# ROUTED 
+- name: Allow routed overlay traffic (overlay -> anywhere)
+  become: true
+  community.general.ufw:
+    rule: allow
+    route: true
+    from_ip: "{{ item }}"
+  loop: "{{ ufw_overlay_cidrs }}"
+
+- name: Allow routed vcn traffic (vcn -> anywhere)
+  become: true
+  community.general.ufw:
+    rule: allow
+    route: true
+    from_ip: "{{ item }}"
+  loop: "{{ ufw_vcn_cidrs }}"
+
+- name: Allow ESP (IPsec) for Swarm overlay
+  community.general.ufw:
+    rule: allow
+    proto: esp
+    from_ip: "{{ item }}"
+  loop: "{{ ufw_vcn_cidrs }}"
+
+
+- name: Enable UFW
+  become: true
+  community.general.ufw:
+    state: enabled
+
+# OCI global default REJECT
+- name: Drop legacy REJECT from INPUT (icmp-host-prohibited) if present
+  become: true
+  ansible.builtin.shell: |
+    iptables -C INPUT -j REJECT --reject-with icmp-host-prohibited \
+      && iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited || true
+
+- name: Drop legacy REJECT from FORWARD (icmp-host-prohibited) if present
+  become: true
+  ansible.builtin.shell: |
+    iptables -C FORWARD -j REJECT --reject-with icmp-host-prohibited \
+      && iptables -D FORWARD -j REJECT --reject-with icmp-host-prohibited || true
+
+
+- name: Make sure UFW hook is first in INPUT
+  become: true
+  ansible.builtin.shell: |
+    iptables -C INPUT -j ufw-before-input || iptables -I INPUT 1 -j ufw-before-input

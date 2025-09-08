@@ -1,0 +1,13 @@
+
+---
+- import_tasks: install.yml
+  tags: [install, swarm-init]
+
+- import_tasks: init.yml
+  tags: [init, swarm-init]
+
+- import_tasks: harden.yml
+  tags: [harden, swarm-init]
+
+- import_tasks: loglimit.yml
+  tags: [swarm.loglimit, swarm-init]

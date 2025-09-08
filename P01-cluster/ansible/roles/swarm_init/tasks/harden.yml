@@ -1,0 +1,10 @@
+---
+- name: Ensure encrypted overlay 'edge-net'
+  community.docker.docker_network:
+    name: edge-net
+    driver: overlay
+    attachable: true
+    driver_options:
+      encrypted: "true"
+    state: present
+  when: inventory_hostname in groups['swarm_leader']

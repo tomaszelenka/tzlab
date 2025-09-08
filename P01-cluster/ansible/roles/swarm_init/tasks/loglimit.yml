@@ -1,0 +1,22 @@
+- name: Ensure Docker log limits globally
+  become: true
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "10m",
+          "max-file": "3"
+        }
+      }
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Restart Docker # systemctl restart docker
+  become: true
+  systemd:
+    name: docker
+    state: restarted
+    enabled: true # systemctl enable docker

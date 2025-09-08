@@ -1,0 +1,21 @@
+---
+- name: Install base packages
+  become: true
+  ansible.builtin.apt:
+    name:
+      - ceph-common
+    state: present
+    update_cache: true
+
+- name: Ensure microceph snap is present
+  become: true
+  community.general.snap:
+    name: microceph
+    state: present
+
+- name: Hold microceph snap refresh
+  become: true
+  ansible.builtin.shell: snap refresh --hold microceph || true
+  args:
+    executable: /bin/bash
+  changed_when: false

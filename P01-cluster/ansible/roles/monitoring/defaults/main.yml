@@ -1,0 +1,9 @@
+---
+cephfs_root: /mnt/cephfs
+
+prom_uid: 65534     # Prometheus
+graf_uid: 472       # Grafana
+loki_uid: 10001     # Loki
+promtail_uid: 0     # Promtail
+
+#LOKI_UID=$(docker run --rm --entrypoint sh grafana/loki:3.5 -c 'id -u') 

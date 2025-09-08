@@ -1,0 +1,125 @@
+version: "3.9"
+
+services:
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    networks: [mon-net] 
+    command:
+      - --config.file=/etc/prometheus/config.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - /mnt/cephfs/prometheus/config.yml:/etc/prometheus/config.yml:ro
+      - /mnt/cephfs/prometheus/data:/prometheus
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    networks:
+      - edge-net
+      - mon-net
+    environment:
+      - GF_SECURITY_ADMIN_USER__FILE=/run/secrets/grafana_admin_user
+      - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_admin_password
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_BRUTE_FORCE_LOGIN_PROTECTION_MAX_ATTEMPTS=3
+      - GF_SECURITY_DISABLE_IP_ADDRESS_LOGIN_PROTECTION=false
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.grafana.rule=Host(`p03grafana.tomaszelenka.cz`)
+        - traefik.http.routers.grafana.entrypoints=websecure
+        - traefik.http.routers.grafana.tls=true
+        - traefik.http.routers.grafana.tls.certresolver=le
+        - traefik.http.services.grafana.loadbalancer.server.port=3000
+    volumes:
+
+      - /mnt/cephfs/grafana:/var/lib/grafana
+    secrets:
+      - grafana_admin_user
+      - grafana_admin_password
+
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    networks: [mon-net]
+    deploy:
+      mode: global        
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 9100
+        published: 9100
+        protocol: tcp
+        mode: host
+    command:
+      - --path.procfs=/host/proc
+      - --path.rootfs=/rootfs
+      - --path.sysfs=/host/sys
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.0
+    networks: [mon-net]
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  loki:
+    image: grafana/loki:3.5
+    networks: [mon-net]
+    command: -config.file=/etc/loki/config/config.yml
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - /mnt/cephfs/loki/config.yml:/etc/loki/config/config.yml:ro
+      - /mnt/cephfs/loki/data:/loki
+
+  promtail:
+    image: grafana/promtail:3.5
+    networks: [mon-net]
+    command: -config.expand-env=true -config.file=/etc/promtail/config.yml
+    deploy:
+      mode: global
+      restart_policy: { condition: on-failure }
+    volumes:
+      - /var/log:/var/log
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /mnt/cephfs/promtail:/etc/promtail
+
+networks:
+  edge-net:
+    external: true
+  mon-net:
+    driver: overlay
+    driver_opts:
+      encrypted: "true"
+
+secrets:
+  grafana_admin_user:
+    external: true
+  grafana_admin_password:
+    external: true

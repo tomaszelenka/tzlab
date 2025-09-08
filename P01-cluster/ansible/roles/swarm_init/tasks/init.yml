@@ -1,0 +1,32 @@
+---
+- name: Swarm init on leader (private IP)
+  shell: docker swarm init --advertise-addr {{ private_ip }}:2377
+  args: { executable: /bin/bash }
+  ignore_errors: true
+  when: inventory_hostname in groups['swarm_leader']
+
+- name: Ensure node is not part of any swarm
+  shell: docker swarm leave --force
+  args:
+    executable: /bin/bash
+  register: leave_out
+  failed_when: false
+  changed_when: "'Node left the swarm.' in (leave_out.stdout | default(''))"
+  when: inventory_hostname not in groups['swarm_leader']
+
+- name: Get manager join token from leader
+  shell: docker swarm join-token -q manager
+  args: { executable: /bin/bash }
+  delegate_to: "{{ groups['swarm_leader'][0] }}"
+  run_once: true
+  register: leader_token
+
+- name: Join as manager (private IPs only)
+  shell: >
+    docker swarm join
+    --advertise-addr {{ private_ip }}
+    --token {{ leader_token.stdout }}
+    {{ hostvars[groups['swarm_leader'][0]].private_ip }}:2377
+  args: { executable: /bin/bash }
+  ignore_errors: true
+  when: inventory_hostname not in groups['swarm_leader']

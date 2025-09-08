@@ -1,0 +1,156 @@
+---
+# ============================================================================
+# NODE01 –  bootstrap
+# ============================================================================
+- name: Check microceph status (node01)
+  ansible.builtin.shell: "microceph status"
+  register: mc_status
+  changed_when: false
+  failed_when: false
+  when: inventory_hostname in groups['ceph_primary']
+
+- name: Bootstrap cluster (node01, only if not initialized)
+  ansible.builtin.shell: "microceph cluster bootstrap"
+  register: bootstrap_out
+  when:
+    - inventory_hostname in groups['ceph_primary']
+    - mc_status.rc != 0
+  changed_when: true
+  failed_when: "bootstrap_out.rc != 0 and 'Database is online' not in (bootstrap_out.stderr | default(''))"
+
+# ============================================================================
+# TOKENS
+# ============================================================================
+- name: Get join token for node02 (delegate to node01)
+  ansible.builtin.shell: "microceph cluster add node02"
+  register: add_node02_out
+  run_once: true
+  delegate_to: "{{ groups['ceph_primary'][0] }}"
+  no_log: true
+
+- name: Save token for node02
+  ansible.builtin.set_fact:
+    token_node02: "{{ add_node02_out.stdout | trim }}"
+  run_once: true
+
+# node03
+- name: Get join token for node03 (delegate to node01)
+  ansible.builtin.shell: "microceph cluster add node03"
+  register: add_node03_out
+  run_once: true
+  delegate_to: "{{ groups['ceph_primary'][0] }}"
+  no_log: true
+
+- name: Save token for node03
+  ansible.builtin.set_fact:
+    token_node03: "{{ add_node03_out.stdout | trim }}"
+  run_once: true
+
+# ============================================================================
+# NODE02 / NODE03 – join to cluster
+# ============================================================================
+- name: Join node02
+  ansible.builtin.shell: "microceph cluster join {{ token_node02 }}"
+  when: inventory_hostname == "node02"
+  no_log: true
+
+- name: Join node03
+  ansible.builtin.shell: "microceph cluster join {{ token_node03 }}"
+  when: inventory_hostname == "node03"
+  no_log: true
+
+- name: microceph status (node02/node03)
+  ansible.builtin.shell: "microceph status"
+  changed_when: false
+  when: inventory_hostname in ['node02', 'node03']
+
+# ============================================================================
+# ALL NODES
+# ============================================================================
+- name: Add loop OSD
+  ansible.builtin.shell: "microceph disk add '{{ ceph_loop_disk }}'"
+  failed_when: false
+
+# ============================================================================
+# NODE01 – CephFS + klient
+# ============================================================================
+- name: Create cephfs_data pool (node01)
+  ansible.builtin.shell: "microceph.ceph osd pool create cephfs_data 64"
+  when: inventory_hostname in groups['ceph_primary']
+  failed_when: false
+
+- name: Create cephfs_metadata pool (node01)
+  ansible.builtin.shell: "microceph.ceph osd pool create cephfs_metadata 64"
+  when: inventory_hostname in groups['ceph_primary']
+  failed_when: false
+
+- name: Create CephFS (node01)
+  ansible.builtin.shell: "microceph.ceph fs new cephfs cephfs_metadata cephfs_data"
+  when: inventory_hostname in groups['ceph_primary']
+  failed_when: false
+
+- name: List FS (node01)
+  ansible.builtin.shell: "microceph.ceph fs ls"
+  changed_when: false
+  when: inventory_hostname in groups['ceph_primary']
+
+- name: MDS stat (node01)
+  ansible.builtin.shell: "microceph.ceph mds stat"
+  changed_when: false
+  when: inventory_hostname in groups['ceph_primary']
+
+- name: Create client 'client.cluster' (node01)
+  ansible.builtin.shell: >
+    microceph.ceph auth get-or-create client.cluster
+    mon 'allow r'
+    mds 'allow rw path=/'
+    osd 'allow rw pool=cephfs_data, allow r pool=cephfs_metadata' >/dev/null
+  when: inventory_hostname in groups['ceph_primary']
+  failed_when: false
+
+- name: Wait a moment for auth map propagation
+  ansible.builtin.wait_for:
+    timeout: 3
+  when: inventory_hostname in groups['ceph_primary']
+
+# ============================================================================
+# ceph.conf + secretfile + mount
+# ============================================================================
+- name: Generate minimal ceph.conf (ALL NODES)
+  ansible.builtin.shell: "microceph.ceph config generate-minimal-conf | tee /etc/ceph/ceph.conf >/dev/null"
+
+- name: Ensure /etc/ceph exists
+  ansible.builtin.file:
+    path: /etc/ceph
+    state: directory
+    mode: '0755'
+
+- name: Fetch client key to secretfile (ALL NODES)
+  ansible.builtin.shell: "microceph.ceph auth get-key client.cluster | tee {{ ceph_secret_file }} >/dev/null"
+  register: getkey_out
+  retries: 5
+  delay: 3
+  until: getkey_out.rc == 0
+
+- name: chmod 600 secretfile
+  ansible.builtin.file:
+    path: "{{ ceph_secret_file }}"
+    mode: '0600'
+
+- name: Create mountpoint
+  ansible.builtin.file:
+    path: "{{ cephfs_mountpoint }}"
+    state: directory
+
+- name: Ensure fstab line for CephFS exists
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '^:/\s+{{ cephfs_mountpoint }}\s+ceph\s+'
+    line: ":/  {{ cephfs_mountpoint }}  ceph  name=cluster,secretfile={{ ceph_secret_file }},ms_mode=secure,_netdev,  0 0"
+    state: present
+
+- name: Mount CephFS
+  ansible.builtin.shell: "mount -a && mount | grep -q ' {{ cephfs_mountpoint }} '"
+  register: mount_out
+  changed_when: cephfs_mountpoint in (mount_out.stdout | default('')) or (mount_out.rc == 0)
+

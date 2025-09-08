@@ -1,0 +1,61 @@
+---
+- name: Create base dirs
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0750"
+  loop:
+    - "{{ cephfs_root }}/prometheus"
+    - "{{ cephfs_root }}/prometheus/data"
+    - "{{ cephfs_root }}/grafana"
+    - "{{ cephfs_root }}/loki"
+    - "{{ cephfs_root }}/loki/data"
+    - "{{ cephfs_root }}/promtail"
+
+- name: Ownership for Prometheus data
+  file:
+    path: "{{ cephfs_root }}/prometheus/data"
+    owner: "{{ prom_uid }}"
+    group: "{{ prom_uid }}"
+    recurse: true
+    mode: "0750"
+
+- name: Ownership for Grafana data
+  file:
+    path: "{{ cephfs_root }}/grafana"
+    owner: "{{ graf_uid }}"
+    group: "{{ graf_uid }}"
+    recurse: true
+    mode: "0750"
+
+- name: Ownership for Loki data
+  file:
+    path: "{{ cephfs_root }}/loki/data"
+    owner: "{{ loki_uid }}"
+    group: "{{ loki_uid }}"
+    recurse: true
+    mode: "0750"
+
+- name: Prometheus config (0640, owner=prom_uid)
+  file:
+    path: "{{ cephfs_root }}/prometheus/config.yml"
+    state: touch
+    owner: "{{ prom_uid }}"
+    group: "{{ prom_uid }}"
+    mode: "0640"
+
+- name: Loki config (0640, owner=loki_uid)
+  file:
+    path: "{{ cephfs_root }}/loki/config.yml"
+    state: touch
+    owner: "{{ loki_uid }}"
+    group: "{{ loki_uid }}"
+    mode: "0640"
+
+- name: Promtail config (0640, owner=root)
+  file:
+    path: "{{ cephfs_root }}/promtail/config.yml"
+    state: touch
+    owner: "{{ promtail_uid }}"
+    group: "{{ promtail_uid }}"
+    mode: "0640"

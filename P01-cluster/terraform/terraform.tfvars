@@ -1,0 +1,10 @@
+# tenancy_ocid       = "ocid1.tenancy.oc1..aaaaaaaac2bvci5gcrwbckps4rwlkflxktv3gavmvpj76wnu6qfotnn4eiiq"
+# user_ocid          = "ocid1.user.oc1..aaaaaaaanlif3x6wjox2lmhhwpzgy5ilaqaasv6iricusys52wdimgqpbmya"
+# fingerprint        = "0a:14:2f:55:c1:69:66:61:18:6f:6b:ad:ff:23:c0:f7"
+# compartment_ocid   = "ocid1.tenancy.oc1..aaaaaaaac2bvci5gcrwbckps4rwlkflxktv3gavmvpj76wnu6qfotnn4eiiq"
+# region = "eu-frankfurt-1"
+ssh_source_ip = "86.49.233.21/32"
+vcn_ip = "10.30.1.0/24"
+
+# private_key_path   = "~/.oci/oci_api_key.pem"
+# public_key_path = "~/.ssh/id_rsa.pub"

@@ -1,0 +1,48 @@
+version: "3.9"
+
+configs:
+  nginx-index:
+    file: ./nginx-traefik.tmpl
+
+services:
+  nginx-traefik:
+    image: nginx:1.27-alpine
+    hostname: "{{.Node.Hostname}}"
+    deploy:
+      mode: replicated
+      replicas: 3
+      update_config:
+        parallelism: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.nginx-traefik.rule=Host(`${NGINX_TRAEFIK_HOST}`)
+        - traefik.http.routers.nginx-traefik.entrypoints=websecure
+        - traefik.http.routers.nginx-traefik.tls.certresolver=le
+        - traefik.http.services.nginx-traefik.loadbalancer.server.port=80
+        - traefik.swarm.network=edge-net
+
+    environment:
+      - SERVICE_NAME={{.Service.Name}}
+      - TASK_SLOT={{.Task.Slot}}
+
+    configs:
+      - source: nginx-index
+        target: /usr/share/nginx/html/index.tmpl
+        mode: 0444
+
+    command: >
+      sh -c "apk add --no-cache gettext >/dev/null 2>&1 &&
+             envsubst < /usr/share/nginx/html/index.tmpl > /usr/share/nginx/html/index.html &&
+             exec nginx -g 'daemon off;'"
+
+    networks:
+      - edge-net
+
+networks:
+  edge-net:
+    external: true
+
+

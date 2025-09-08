@@ -1,0 +1,29 @@
+ufw_default_incoming: deny
+ufw_default_outgoing: allow
+
+ufw_allow_ssh: true
+ufw_ssh_profile: OpenSSH          
+
+
+ufw_vcn_cidrs:        # VCN (Oracle Cloud)
+  - 10.30.1.0/24
+
+ufw_allow_anywhere:
+  - { port: "443", proto: "tcp" }
+
+
+ufw_remove_anywhere:
+  - { port: "80",  proto: "tcp" }
+
+
+ufw_vcn_rules:
+  - { port: "3300", proto: "tcp" } # ceph-mon (quincy+)
+  - { port: "6789", proto: "tcp" } # ceph v1
+  - { port: "7443", proto: "tcp" } # MicroCeph API (pokud používáš)
+  - { port: "6800:7300", proto: "tcp" } # Ceph OSD
+  - { port: "2377", proto: "tcp" } # Swarm manager
+  - { port: "7946", proto: "tcp" } # Swarm gossip
+  - { port: "7946", proto: "udp" } # Swarm gossip
+  - { port: "4789", proto: "udp" } # VXLAN Swarm
+  - { port: "9100", proto: "tcp" } # node-exporter (host-published)
+  - { port: "8080", proto: "tcp" } # cAdvisor (host-published)

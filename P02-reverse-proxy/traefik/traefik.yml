@@ -1,0 +1,58 @@
+
+version: "3.9"
+
+services:
+  traefik:
+    image: traefik:v3.5.1
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      labels:
+        - traefik.enable=false
+
+    ports:
+      - target: 443
+        published: 443
+        mode: host
+
+    networks:
+      - edge-net
+
+    command:
+      # Providers
+      - --providers.swarm=true
+      - --providers.swarm.exposedbydefault=false
+      - --providers.swarm.network=edge-net
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+
+      # Entrypoint
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.http.tls=true
+
+      # ACME – TLS-ALPN-01
+      - --certificatesresolvers.le.acme.email=${LE_ACME_EMAIL}
+      - --certificatesresolvers.le.acme.storage=/etc/traefik/acme/acme.json
+      - --certificatesresolvers.le.acme.tlschallenge=true
+
+      # Health, Dashboard, Logging
+      - --ping=true
+      - --ping.entrypoint=websecure
+      - --api.dashboard=true
+      - --accesslog=true
+      - --accesslog.format=json
+      - --log.level=${TRAEFIK_LOG_LEVEL:-info}
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /mnt/cephfs/traefik:/etc/traefik:rw
+
+networks:
+  edge-net:
+    external: true
+
