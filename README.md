@@ -7,7 +7,7 @@ The environment is designed for learning, automation, and real-world portfolio p
 
 
 ## Architecture  
-- **3 Nodes (OCI Ampere A1 instances)**  
+- **3 Nodes (OCI Ampere instances)**  
 - **Terraform** – infrastructure provisioning (VCN, subnets, compute, networking)  
 - **Ansible** – server configuration & automation  
 - **MicroCeph** – distributed storage across nodes  
