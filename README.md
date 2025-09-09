@@ -12,7 +12,7 @@ The environment is designed for learning, automation, and real-world portfolio p
 - **Ansible** – server configuration & automation  
 - **MicroCeph** – distributed storage across nodes  
 - **Docker Swarm** – container orchestration for services and stacks  
-- **Traefik** – reverse proxy and SSL management ([p02traefik.tomaszelenka.cz](https://p02traefik.tomaszelenka.cz))  
+- **Traefik** – reverse proxy and TLS management ([p02traefik.tomaszelenka.cz](https://p02traefik.tomaszelenka.cz))  
 - **Portainer** – container management GUI  
 - **Monitoring** – Grafana, Prometheus, Loki  ([p03grafana.tomaszelenka.cz](https://p03grafana.tomaszelenka.cz))  
 
