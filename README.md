@@ -15,6 +15,7 @@ The environment is designed for learning, automation, and real-world portfolio p
 - **Traefik** – reverse proxy and TLS management ([p02traefik.tomaszelenka.cz](https://p02traefik.tomaszelenka.cz))  
 - **Portainer** – container management GUI  
 - **Monitoring** – Grafana, Prometheus, Loki  ([p03grafana.tomaszelenka.cz](https://p03grafana.tomaszelenka.cz))  
+<img width="1748" height="758" alt="image" src="https://github.com/user-attachments/assets/d7e68599-5ab9-4766-8971-08dc0309eaf7" />
 
 ## Goals  
 - Demonstrate infrastructure as code (IaC) with Terraform and Ansible  
