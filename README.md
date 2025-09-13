@@ -24,4 +24,4 @@ The environment is designed for learning, automation, and real-world portfolio p
 
 ## Next Steps  
 - Extend with CI/CD pipelines (GitHub Actions, Azure DevOps etc.)  
-- Add Kubernetes (k3s / RKE2) as an alternative to Swarm  
+- Add Kubernetes (k3s / RKE2) as an alternative to Docker Swarm  
