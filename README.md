@@ -16,6 +16,7 @@ The environment is designed for learning, automation, and real-world portfolio p
 - **Portainer** – container management GUI  
 - **Monitoring** – Grafana, Prometheus, Loki  ([p03grafana.tomaszelenka.cz](https://p03grafana.tomaszelenka.cz))  
 <img width="1703" height="867" alt="image" src="https://github.com/user-attachments/assets/a5408cdb-667b-443e-ab86-b17393713dbb" />
+<img width="1716" height="1190" alt="image" src="https://github.com/user-attachments/assets/4596397f-8d1d-487f-b088-f93c68f7c846" />
 
 
 ## Goals  
